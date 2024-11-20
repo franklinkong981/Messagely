@@ -1,6 +1,7 @@
 /** User class for message.ly */
 
-
+const db = require("../db");
+const ExpressError = require("../expressError");
 
 /** User of the site. */
 
@@ -10,7 +11,22 @@ class User {
    *    {username, password, first_name, last_name, phone}
    */
 
-  static async register({username, password, first_name, last_name, phone}) { }
+  static async register({username, password, first_name, last_name, phone}) {
+    const register_result = await db.query(
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
+      VALUES ($1, $2, $3, $4, $5, current_timestamp)
+      RETURNING username, password, first_name, last_name, phone`,
+      [username, password, first_name, last_name, phone]
+    );
+    const registered_user = register_result.rows[0];
+    return {
+      username: registered_user.username,
+      password: registered_user.password,
+      first_name: registered_user.first_name,
+      last_name: registered_user.last_name,
+      phone: registered_user.phone
+    };
+  }
 
   /** Authenticate: is this username/password valid? Returns boolean. */
 
