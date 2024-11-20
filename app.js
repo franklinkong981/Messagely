@@ -21,6 +21,10 @@ app.use(cors());
 // get auth token for all routes. MUST COME BEFORE ROUTES
 app.use(authenticateJWT);
 
+// Use middleware logging function and prevent printing favicon.ico error to terminal
+app.use(morgan('dev'));
+app.get('/favicon.ico', (req, res) => res.sendStatus(204));
+
 /** routes */
 
 const authRoutes = require("./routes/auth");
