@@ -2,10 +2,13 @@
 
 
 const express = require("express");
+const morgan = require("morgan");
 const cors = require("cors");
+
+const ExpressError = require("./expressError");
+
 const { authenticateJWT } = require("./middleware/auth");
 
-const ExpressError = require("./expressError")
 const app = express();
 
 // allow both form-encoded and json body parsing
@@ -15,7 +18,7 @@ app.use(express.urlencoded({extended: true}));
 // allow connections to all routes from any browser
 app.use(cors());
 
-// get auth token for all routes
+// get auth token for all routes. MUST COME BEFORE ROUTES
 app.use(authenticateJWT);
 
 /** routes */
@@ -38,12 +41,15 @@ app.use(function(req, res, next) {
 /** general error handler */
 
 app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  if (process.env.NODE_ENV != "test") console.error(err.stack);
+  //the default status is the 500 Internal Server Error
+  let status = err.status || 500;
 
-  return res.json({
-    error: err,
-    message: err.message
+  //set the status and alert the user
+  return res.status(status).json({
+    error: {
+      message: err.message,
+      status: status
+    }
   });
 });
 
