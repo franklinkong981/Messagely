@@ -44,7 +44,12 @@ class User {
 
   /** Update last_login_at for user */
 
-  static async updateLoginTimestamp(username) { }
+  static async updateLoginTimestamp(username) {
+    const user_result = await db.query(`UPDATE users SET last_login_at = current_timestamp`);
+    if (user_result.rows.length === 0) {
+      throw new ExpressError(`User with username of ${username} not found`, 400);
+    }
+  }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name, phone}, ...] */
