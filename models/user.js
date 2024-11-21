@@ -121,7 +121,38 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesTo(username) { }
+  static async messagesTo(username) {
+    const messages_results = await db.query(
+      `SELECT m.id,
+              m.body,
+              m.sent_at,
+              m.read_at,
+              from_users.username AS from_username,
+              from_users.first_name AS from_first_name,
+              from_users.last_name AS from_last_name,
+              from_users.phone AS from_phone,
+      FROM messages as m
+        JOIN users AS to_user ON m.to_username = to_user.username
+        JOIN users AS from_users ON m.from_username = from_users.username
+      WHERE to_user.username = $1`,
+      [username]
+    );
+    if (messages_results.rows.length === 0) {
+      throw new ExpressError(`User with username ${username} not found`, 404);
+    }
+    return {
+      id: messages_results.id,
+      body: messages_results.body,
+      sent_at: messages_results.sent_at,
+      read_at: messages_results.read_at,
+      from_user: {
+        username: messages_results.from_username,
+        first_name: messages_results.from_first_name,
+        last_name: messages_results.from_last_name,
+        phone: messages_results.from_phone
+      }
+    };
+  }
 }
 
 
