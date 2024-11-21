@@ -1,5 +1,8 @@
 /** User class for message.ly */
 
+const bcrypt = require("bcrypt");
+
+const { BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
 const ExpressError = require("../expressError");
 
@@ -30,7 +33,14 @@ class User {
 
   /** Authenticate: is this username/password valid? Returns boolean. */
 
-  static async authenticate(username, password) { }
+  static async authenticate(username, password) {
+    const user_result = await db.query(`SELECT username, password FROM users WHERE username = $1`,[username]);
+    if (user_result.rows.length === 0) {
+      throw new ExpressError(`User with username of ${username} not found`, 400);
+    }
+    const user = user_result.rows[0];
+    return await bcrypt.compare(password, user.password);
+  }
 
   /** Update last_login_at for user */
 
