@@ -29,7 +29,7 @@ class User {
   static async authenticate(username, password) {
     const user_result = await db.query(`SELECT username, password FROM users WHERE username = $1`,[username]);
     if (user_result.rows.length === 0) {
-      throw new ExpressError(`User with username of ${username} not found`, 400);
+      throw new ExpressError(`User with username of ${username} not found`, 404);
     }
     const user = user_result.rows[0];
     return await bcrypt.compare(password, user.password);
@@ -40,7 +40,7 @@ class User {
   static async updateLoginTimestamp(username) {
     const user_result = await db.query(`UPDATE users SET last_login_at = current_timestamp`);
     if (user_result.rows.length === 0) {
-      throw new ExpressError(`User with username of ${username} not found`, 400);
+      throw new ExpressError(`User with username of ${username} not found`, 404);
     }
   }
 
@@ -67,7 +67,7 @@ class User {
       [username]
     );
     if (user_result.rows.length === 0) {
-      throw new ExpressError(`User with username of ${username} not found`, 400);
+      throw new ExpressError(`User with username of ${username} not found`, 404);
     }
     return user_result.rows[0];
   }
@@ -80,7 +80,38 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesFrom(username) { }
+  static async messagesFrom(username) {
+    const messages_results = await db.query(
+      `SELECT m.id,
+              m.body,
+              m.sent_at,
+              m.read_at,
+              to_users.username AS to_username,
+              to_users.first_name AS to_first_name,
+              to_users.last_name AS to_last_name,
+              to_users.phone AS to_phone,
+      FROM messages as m
+        JOIN users AS from_user ON m.from_username = from_user.username
+        JOIN users AS to_users ON m.to_username = to_users.username
+      WHERE from_user.username = $1`,
+      [username]
+    );
+    if (messages_results.rows.length === 0) {
+      throw new ExpressError(`User with username ${username} not found`, 404);
+    }
+    return {
+      id: messages_results.id,
+      body: messages_results.body,
+      sent_at: messages_results.sent_at,
+      read_at: messages_results.read_at,
+      to_user: {
+        username: messages_results.to_username,
+        first_name: messages_results.to_first_name,
+        last_name: messages_results.to_last_name,
+        phone: messages_results.to_phone
+      }
+    };
+  }
 
   /** Return messages to this user.
    *
